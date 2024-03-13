@@ -1,0 +1,36 @@
+# This is the first iteration. HuggingFace transformers QA pipeline, default model. Full document is loaded.
+# pip install pdfplumber transformers pandas tensorflow
+
+import pdfplumber
+import pandas as pd
+from transformers import pipeline
+
+# Initialize NLP pipeline for question answering
+qa_pipeline = pipeline("question-answering")
+
+def load_document(file_path):
+    """Load and return the document content based on file extension."""
+    text_content = ''
+    if file_path.endswith('.pdf'):
+        with pdfplumber.open(file_path) as pdf:
+            for page in pdf.pages:
+                text_content += page.extract_text() + ' '
+    elif file_path.endswith('.txt'):
+        with open(file_path, 'r') as file:
+            text_content = file.read()
+    else:
+        raise ValueError("Unsupported file type. Please provide a PDF or text document.")
+    return text_content.strip()
+
+def answer_question(question, context):
+    """Answer a question given the context."""
+    result = qa_pipeline(question=question, context=context)
+    return result['answer']
+
+# Example usage:
+file_path = 'path/to/your/document.pdf'  # Update this to the path of your document
+document_content = load_document(file_path)
+
+# Now you can ask questions about the document
+question = "What are the security implications given in this document?"  # Example question
+print(answer_question(question, document_content))
