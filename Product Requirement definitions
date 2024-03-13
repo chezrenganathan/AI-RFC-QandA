@@ -1,0 +1,31 @@
+# Back of envelope requirements; not the most formal or templated one.
+Functional requirements:
+A Question & Answering AI LLM based program to -
+- summarize, 
+- directly quote
+- provide name/title of RFC given id, 
+- output id given title
+- information of process
+- information on authors
+- information on references
+- Must work for RFCs, should work for draft documents
+- Language: English. Other languages TBD for future phases
+
+UI/UX:
+User Input UI/UX-
+- User should be presented with simple UI for query input. 
+- Ideally apart from the query itself no further input/selection options should be needed
+- Multiple questions at a time and followup questions should be possible.
+- Form must be able to take multiple lines. Tab/enter should work.
+  
+Output response UI/UX:
+- Output must be directly from the relevant RFC or draft and not from other sources (precise/authentic/reliable/in-context)
+- Response must be in natural language
+- Must be professional in tone
+- Must be polite/courteous 
+- Output must be presented below the user query
+- If unable to obtain the information, response needs to say as such (must not provide creative output or hallucinated output)
+
+Scale: Skipping this for phase 1, but this may matter phase 1 as well.
+
+Performance: Skipping this for phase 1, but this may matter as well.
