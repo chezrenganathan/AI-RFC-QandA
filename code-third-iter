@@ -1,0 +1,250 @@
+# PREP ENVIRONMENT WITH REQUIRED PACKAGES. I USED THE FREE GPU RESOURCE AT GOOGLE COLAB HENCE faiss-gpu (use faiss-cpu if not).
+# WE ARE STILL USING HF SENTENCE TRANSFORMER MODEL FOR THE EMBEDDING PART. OPENAI GPT-4 API FOR ACTUAL Q&A AT THE END
+# This uses the updated API call for GPT-4. It fixes the old API issue with chatGPT in previous iteration (2nd)
+pip install openai
+pip install sentence-transformers transformers
+pip install faiss-gpu
+
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+import openai
+
+# Initialize OpenAI API
+openai.api_key = '[OPEN API KEY]'
+
+# document preprocessing (split into sections/paragraphs). hard-coded into variable for MVP
+document_sections = [
+   """1.  Introduction
+
+   Virtual Private LAN Service (VPLS), as defined in [RFC4664],
+   [RFC4761], and [RFC4762], is a proven and widely deployed technology.
+   However, the existing solution has a number of limitations when it
+   comes to multihoming and redundancy, multicast optimization,
+   provisioning simplicity, flow-based load balancing, and multipathing;
+   these limitations are important considerations for Data Center (DC)
+   deployments.  [RFC7209] describes the motivation for a new solution
+   to address these limitations.  It also outlines a set of requirements
+   that the new solution must address.
+
+   This document describes procedures for a BGP MPLS-based solution
+   called Ethernet VPN (EVPN) to address the requirements specified in
+   [RFC7209].  Please refer to [RFC7209] for the detailed requirements
+   and motivation.  EVPN requires extensions to existing IP/MPLS
+   protocols as described in this document.  In addition to these
+   extensions, EVPN uses several building blocks from existing MPLS
+   technologies.""",
+   
+    """ BGP MPLS-Based EVPN Overview
+
+   This section provides an overview of EVPN.  An EVPN instance
+   comprises Customer Edge devices (CEs) that are connected to Provider
+   Edge devices (PEs) that form the edge of the MPLS infrastructure.  A
+   CE may be a host, a router, or a switch.  The PEs provide virtual
+   Layer 2 bridged connectivity between the CEs.  There may be multiple
+   EVPN instances in the provider's network.
+
+   The PEs may be connected by an MPLS Label Switched Path (LSP)
+   infrastructure, which provides the benefits of MPLS technology, such
+   as fast reroute, resiliency, etc.  The PEs may also be connected by
+   an IP infrastructure, in which case IP/GRE (Generic Routing
+   Encapsulation) tunneling or other IP tunneling can be used between
+   the PEs.  The detailed procedures in this document are specified only
+   for MPLS LSPs as the tunneling technology.  However, these procedures
+   are designed to be extensible to IP tunneling as the Packet Switched
+   Network (PSN) tunneling technology.
+
+   In an EVPN, MAC learning between PEs occurs not in the data plane (as
+   happens with traditional bridging in VPLS [RFC4761] [RFC4762]) but in
+   the control plane.  Control-plane learning offers greater control
+   over the MAC learning process, such as restricting who learns what,
+   and the ability to apply policies.  Furthermore, the control plane
+   chosen for advertising MAC reachability information is multi-protocol
+   (MP) BGP (similar to IP VPNs [RFC4364]).  This provides flexibility
+   and the ability to preserve the "virtualization" or isolation of
+   groups of interacting agents (hosts, servers, virtual machines) from
+   each other.  In EVPN, PEs advertise the MAC addresses learned from
+   the CEs that are connected to them, along with an MPLS label, to
+   other PEs in the control plane using Multiprotocol BGP (MP-BGP).
+   Control-plane learning enables load balancing of traffic to and from
+   CEs that are multihomed to multiple PEs.  This is in addition to load
+   balancing across the MPLS core via multiple LSPs between the same
+   pair of PEs.  In other words, it allows CEs to connect to multiple
+   active points of attachment.  It also improves convergence times in
+   the event of certain network failures.
+
+   However, learning between PEs and CEs is done by the method best
+   suited to the CE: data-plane learning, IEEE 802.1x, the Link Layer
+   Discovery Protocol (LLDP), IEEE 802.1aq, Address Resolution Protocol
+   (ARP), management plane, or other protocols.
+
+   It is a local decision as to whether the Layer 2 forwarding table on
+   a PE is populated with all the MAC destination addresses known to the
+   control plane, or whether the PE implements a cache-based scheme.
+   For instance, the MAC forwarding table may be populated only with the
+   MAC destinations of the active flows transiting a specific PE.
+   
+   The policy attributes of EVPN are very similar to those of IP-VPN.
+   An EVPN instance requires a Route Distinguisher (RD) that is unique
+   per MAC-VRF and one or more globally unique Route Targets (RTs).  A
+   CE attaches to a MAC-VRF on a PE, on an Ethernet interface that may
+   be configured for one or more Ethernet tags, e.g., VLAN IDs.  Some
+   deployment scenarios guarantee uniqueness of VLAN IDs across EVPN
+   instances: all points of attachment for a given EVPN instance use the
+   same VLAN ID, and no other EVPN instance uses this VLAN ID.  This
+   document refers to this case as a "Unique VLAN EVPN" and describes
+   simplified procedures to optimize for it.""",
+   
+   """ Frame Ordering
+
+   In a MAC address, if the value of the first nibble (bits 8 through 5)
+   of the most significant octet of the destination MAC address (which
+   follows the last MPLS label) happens to be 0x4 or 0x6, then the
+   Ethernet frame can be misinterpreted as an IPv4 or IPv6 packet by
+   intermediate P nodes performing ECMP based on deep packet inspection,
+   thus resulting in load balancing packets belonging to the same flow
+   on different ECMP paths and subjecting those packets to different
+   delays.  Therefore, packets belonging to the same flow can arrive at
+   the destination out of order.  This out-of-order delivery can happen
+   during steady state in the absence of any failures, resulting in
+   significant impact on network operations.
+
+   In order to avoid any such misordering, the following rules are
+   applied:
+
+   - If a network uses deep packet inspection for its ECMP, then the
+     "Preferred PW MPLS Control Word" [RFC4385] SHOULD be used with the
+     value 0 (e.g., a 4-octet field with a value of zero) when sending
+     EVPN-encapsulated packets over an MP2P LSP.
+
+   - If a network uses entropy labels [RFC6790], then the control word
+     SHOULD NOT be used when sending EVPN-encapsulated packets over an
+     MP2P LSP.
+
+   - When sending EVPN-encapsulated packets over a P2MP LSP or P2P LSP,
+     then the control word SHOULD NOT be used.""",
+   
+    """Security Considerations
+
+   Security considerations discussed in [RFC4761] and [RFC4762] apply to
+   this document for MAC learning in the data plane over an Attachment
+   Circuit (AC) and for flooding of unknown unicast and ARP messages
+   over the MPLS/IP core.  Security considerations discussed in
+   [RFC4364] apply to this document for MAC learning in the control
+   plane over the MPLS/IP core.  This section describes additional
+   considerations.
+
+   As mentioned in [RFC4761], there are two aspects to achieving data
+   privacy and protecting against denial-of-service attacks in a VPN:
+   securing the control plane and protecting the forwarding path.
+   Compromise of the control plane could result in a PE sending customer
+   data belonging to some EVPN to another EVPN, or black-holing EVPN
+   customer data, or even sending it to an eavesdropper, none of which
+   are acceptable from a data privacy point of view.  In addition,
+   compromise of the control plane could provide opportunities for 
+   unauthorized EVPN data usage (e.g., exploiting traffic replication
+   within a multicast tree to amplify a denial-of-service attack based
+   on sending large amounts of traffic).
+
+   The mechanisms in this document use BGP for the control plane.
+   Hence, techniques such as those discussed in [RFC5925] help
+   authenticate BGP messages, making it harder to spoof updates (which
+   can be used to divert EVPN traffic to the wrong EVPN instance) or
+   withdrawals (denial-of-service attacks).  In the multi-AS backbone
+   options (b) and (c) [RFC4364], this also means protecting the
+   inter-AS BGP sessions between the Autonomous System Border Routers
+   (ASBRs), the PEs, or the Route Reflectors.
+
+   Further discussion of security considerations for BGP may be found in
+   the BGP specification itself [RFC4271] and in the security analysis
+   for BGP [RFC4272].  The original discussion of the use of the TCP MD5
+   signature option to protect BGP sessions is found in [RFC5925], while
+   [RFC6952] includes an analysis of BGP keying and authentication
+   issues.
+
+   Note that [RFC5925] will not help in keeping MPLS labels private --
+   knowing the labels, one can eavesdrop on EVPN traffic.  Such
+   eavesdropping additionally requires access to the data path within an
+   SP network.  Users of VPN services are expected to take appropriate
+   precautions (such as encryption) to protect the data exchanged over
+   a VPN.
+
+   One of the requirements for protecting the data plane is that the
+   MPLS labels be accepted only from valid interfaces.  For a PE, valid
+   interfaces comprise links from other routers in the PE's own AS.  For
+   an ASBR, valid interfaces comprise links from other routers in the
+   ASBR's own AS, and links from other ASBRs in ASes that have instances
+   of a given EVPN.  It is especially important in the case of multi-AS
+   EVPN instances that one accept EVPN packets only from valid
+   interfaces.
+
+   It is also important to help limit malicious traffic into a network
+   for an impostor MAC address.  The mechanism described in Section 15.1
+   shows how duplicate MAC addresses can be detected and continuous
+   false MAC mobility can be prevented.  The mechanism described in
+   Section 15.2 shows how MAC addresses can be pinned to a given
+   Ethernet segment, such that if they appear behind any other Ethernet
+   segments, the traffic for those MAC addresses can be prevented from
+   entering the EVPN network from the other Ethernet segments"""]
+
+question = "Can you summarize the security considerations"
+#question = "what are the rules to be employed to avoid mis-ordering of frames"
+#question = "what are the rules to be employed to avoid mis-ordering of frames when sending EVPN encapsulated packets over P2MP LSP"
+#question = "From frame ordering perspective what happens if the value of the first nibble happens to be 0x6"
+#question = "Can you summarize this bgp evpn rfc"
+
+# This part has fixes for the old API given by chatGPT.
+def generate_answer_with_openai(question, context):
+    try:
+#        response = openai.Completion.create(
+        response = openai.chat.completions.create (
+            model="gpt-4",  # Use the most appropriate model
+
+            messages=[
+            {
+                "role": "user",
+                "content": f"Question: {question}\nContext: {context}\nAnswer:",
+            }
+            ],
+#            prompt=f"Question: {question}\nContext: {context}\nAnswer:",
+            temperature=0.1,
+            max_tokens=1000,
+            n=1,
+            stop=None,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0,
+        )
+        #answer = response.choices[0].text.strip()
+        #return answer
+        return response
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return None
+
+# Load a pre-trained sentence-transformer model for embedding
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Generate embeddings for each section
+embeddings = model.encode(document_sections, convert_to_tensor=False)
+
+# Dimension of our vectors
+d = embeddings.shape[1]
+
+# Create a FAISS index
+index = faiss.IndexFlatL2(d)
+index.add(embeddings)
+
+def find_relevant_context(question, top_k=1):
+    question_embedding = model.encode([question], convert_to_tensor=False)
+    distances, indices = index.search(question_embedding, top_k)
+    return [document_sections[i] for i in indices[0]]
+
+# Example usage
+
+relevant_contexts = find_relevant_context(question, top_k=1)
+for context in relevant_contexts:
+    print("Context:", context)
+    answer = generate_answer_with_openai(question, context)
+    print("Answer:", answer)
+
