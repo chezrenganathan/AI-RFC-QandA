@@ -1,0 +1,26 @@
+# THIS CODE DOES NOT WORK AS IT USES OUTDATED OpenAI API. WE HAVE THE HUGE PROMPT CONTEXT ISSUE THOUGH..PASSING THE WHOLE DOCUMENT AS TEXT
+# THIS CODE WAS NOT USED/EXECTUTED
+# THE NEXT ITERATION CODE HAS THE UPDATED API CALL. 
+pip install openai
+import openai
+
+openai.api_key = 'your_api_key_here'
+
+def answer_question_with_openai(question, context):
+    response = openai.Completion.create(
+      engine="text-davinci-003", # Or the latest available model
+      prompt=f"Q: {question}\nA:",
+      temperature=0,
+      max_tokens=150,
+      top_p=1.0,
+      frequency_penalty=0.0,
+      presence_penalty=0.0,
+      stop=["\n"],
+      context=context # Depending on the model, you might need to adjust how context is provided
+    )
+    return response.choices[0].text.strip()
+
+# Example usage:
+question = "What are the security implications given in this document?"
+document_content = "..."  # Assume you've loaded and concatenated your document content here
+print(answer_question_with_openai(question, document_content))
