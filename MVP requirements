@@ -1,0 +1,19 @@
+MVP requirements definition:
+
+Can you assume the role of an interactive expert software programmer chatbot for the task below.
+Task: Provide code for a software application
+Application objective: Given text document as input, the application needs to answer user questions on the document content. The response must be only based on the content of the given document. 
+User questions will be English natural language. Here are some samples of user questions -
+- Can you summarize this document
+- Who are the authors of this document
+- What are the references given in this document
+- What are the security implications given in this document
+- What is the introduction
+- What is the abstract
+- Are there related RFCs
+- Can you summarize this specific section titled <title>
+- What the values defined for the flag <flag name or other identifier>
+
+Application programming language: Python
+
+You should continue to prompt me if further inputs from me is required to build this code
