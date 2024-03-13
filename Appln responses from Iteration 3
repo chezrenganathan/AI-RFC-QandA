@@ -1,0 +1,86 @@
+# THIS IS JUST DOCUMENTATION OF THE RESPONSES THAT I GOT FOR DIFFERENT USER QUERIES WITH THE FULL RAG PIPELINE USED IN THE 3RD AND FINAL ITERATION
+# IN THE APPLICATION'S RESPONSES BELOW BELOW FOCUS ON THE "Content" PARTS OF THE "Answer". THE API INCLUDES OTHER INFORMATION IN ITS RESPONSE.
+
+1. question = "Can you summarize the security considerations"
+
+--------
+Answer: ChatCompletion(id='chatcmpl-927kypFS4Wq8vOehdN3fCr8ZFnOOu', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(
+
+  content='The security considerations discussed in this document pertain to MAC learning in the data plane over an Attachment Circuit (AC) and for 
+           flooding of unknown unicast and ARP messages over the MPLS/IP core. It also covers MAC learning in the control plane over the MPLS/IP core. 
+           The document highlights the importance of securing the control plane and protecting the forwarding path to ensure data privacy and protect 
+           against denial-of-service attacks in a VPN. The document also discusses the use of BGP for the control plane and the need for techniques 
+           to authenticate BGP messages to prevent spoofing updates or withdrawals. Other considerations include the need to 
+           keep MPLS labels private to prevent eavesdropping on EVPN traffic, accepting MPLS labels only from valid interfaces, 
+           and limiting malicious traffic into a network for an impostor MAC address.',
+ 
+  role='assistant', function_call=None, tool_calls=None))], created=1710293500, model='gpt-4-0613', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=162, prompt_tokens=822, total_tokens=984))
+-----
+My assessment: !!!! THIS IS WHAT ONE WOULD EXPECT FROM A FULL RAG PIPELINE WITH LLM FOR Q&A. IT IS ABLE TO SUMMARIZE AS EXPECTED !!!!
+
+
+2. question = "what are the rules to be employed to avoid mis-ordering of frames"
+--------
+
+Answer: ChatCompletion(id='chatcmpl-927rT3JGH0WDYti5OetelPVeFCpj5', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(
+  
+  content='
+To avoid misordering of frames, the following rules should be applied:\n\n1. 
+If a network uses deep packet inspection for its ECMP, then the "Preferred PW MPLS Control Word" [RFC4385] should be used with the value 0 
+(e.g., a 4-octet field with a value of zero) when sending EVPN-encapsulated packets over an MP2P LSP.\n\n2. 
+If a network uses entropy labels [RFC6790], then the control word should not be used when sending EVPN-encapsulated packets over an MP2P LSP.\n\n3. 
+  When sending EVPN-encapsulated packets over a P2MP LSP or P2P LSP, then the control word should not be used.', 
+
+role='assistant', function_call=None, tool_calls=None))], created=1710293903, model='gpt-4-0613', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=157, prompt_tokens=375, total_tokens=532))
+------
+My assessment: !!!! IT HAS PICKED THE PART OF THE SECTION THAT HAS THE SPECIFIC INFORMATION !!!!
+
+
+3. LETS TRY ASKING MORE SPECIFICALLY
+question = "what are the rules to be employed to avoid mis-ordering of frames when sending EVPN encapsulated packets over P2MP LSP"
+--------
+Answer: ChatCompletion(id='chatcmpl-927vR9Z46mET50Ptk6gFNERgoRAaw', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(
+
+content='The rules to avoid misordering of frames when sending EVPN encapsulated packets over P2MP LSP are:\n\n1. 
+         If a network uses deep packet inspection for its ECMP, then the "Preferred PW MPLS Control Word" [RFC4385] 
+         should be used with the value 0 (e.g., a 4-octet field with a value of zero) when sending EVPN-encapsulated packets 
+        over an MP2P LSP.\n\n2. If a network uses entropy labels [RFC6790], then the control word should not be used when 
+        sending EVPN-encapsulated packets over an MP2P LSP.\n\n3. When sending EVPN-encapsulated packets over a P2MP LSP or P2P LSP, 
+        then the control word should not be used.', 
+
+role='assistant', function_call=None, tool_calls=None))], created=1710294149, model='gpt-4-0613', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=166, prompt_tokens=388, total_tokens=554))
+--------
+My assessment: !!! IT HAS EXTRACTED RELEVANT INFORMATION FOR THE SPECIFIC QUESTION AND IS NOT QUOTING THE WHOLE FRAME HANDLING SECTION WORD-FOR-WORD. GOOD !!!
+
+
+4. LETS GO EVEN MORE SPECIFIC
+question = "From frame ordering perspective what happens if the value of the first nibble happens to be 0x6"
+
+---------
+Answer: ChatCompletion(id='chatcmpl-9284LvVXicwyuUeNojHdMxySUEIWW', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(
+
+content='If the value of the first nibble happens to be 0x6, the Ethernet frame can be misinterpreted as an IPv6 packet 
+  by intermediate P nodes performing ECMP based on deep packet inspection. This can result in load balancing packets belonging 
+  to the same flow on different ECMP paths and subjecting those packets to different delays. Consequently, packets belonging to 
+  the same flow can arrive at the destination out of order, impacting network operations. To avoid this, certain rules are applied, 
+  such as using the "Preferred PW MPLS Control Word" with the value 0 when sending EVPN-encapsulated packets over an MP2P LSP if 
+  the network uses deep packet inspection for its ECMP.', 
+
+role='assistant', function_call=None, tool_calls=None))], created=1710294701, model='gpt-4-0613', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=142, prompt_tokens=382, total_tokens=524))
+------
+My assessment: !!!! VERY ACCURATE, QUOTED, PLUS RESOLUTION INCLUDED !!!!
+
+
+5. LETS TRY THE SUMMARIZATION QUESTION AGAIN ON A DIFFERENT SECTION
+question = "Can you summarize this bgp evpn rfc"
+----
+Answer: ChatCompletion(id='chatcmpl-92KxiETOOny7xWMIoNUAONIcoPZRm', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(
+
+content='The document outlines procedures for a BGP MPLS-based solution known as Ethernet VPN (EVPN) to address 
+  limitations of the existing Virtual Private LAN Service (VPLS) technology. These limitations include issues with 
+  multihoming and redundancy, multicast optimization, provisioning simplicity, flow-based load balancing, and multipathing. 
+  EVPN requires extensions to existing IP/MPLS protocols and uses several building blocks from existing MPLS technologies.', 
+
+role='assistant', function_call=None, tool_calls=None))], created=1710344262, model='gpt-4-0613', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=84, prompt_tokens=254, total_tokens=338))
+-----
+My assessment: !!! WE ARE GOOD NOW ???!!!
