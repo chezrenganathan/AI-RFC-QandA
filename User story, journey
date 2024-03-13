@@ -1,0 +1,20 @@
+User persona:
+  Users in the Internet Networking domain
+  Includes s/w development engineer, system architect, network architect, standard compliance personnel, product manager, system engineer, IETF process newbee, IETF contributor.
+  
+User story:
+  As a [User persona], 
+  
+  I should be able to ask for information on RFC (or drafts) in natural language and be presented with responses (only) directly from the RFC, draft, IETF process document
+  
+  So that, 
+  I can use the response to develop compliant software, check code for compliance, in general check sections, summary of a RFC/draft, use for network design, track references, get informatoin on authors
+  
+User journey:
+  User presented with a form to input their query. 
+  User enters query in natural language. Query is expected to be only on IETF rfcs and drafts in phase 1. 
+  User submits query
+  User provided with response below the query.
+  User must be able to ask multiple queries, one at a time though
+  User should be presented with a followup input form below the previous one (response) or 
+  provided with a "clear" button and enter in the same form
